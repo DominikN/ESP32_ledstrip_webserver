@@ -8,11 +8,12 @@
 
 **2. Install Husarnet IDF for ESP32:**
 * open "File" -> "Preferences"
-* in a field "Additional Board Manager URLs" add this link: https://files.husarion.com/arduino/package_esp32_index.json
+* in a field "Additional Board Manager URLs" add this link: https://github.com/husarnet/arduino-esp32/releases/download/1.0.4-1/package_esp32_index.json
+(note that this is a Husarnet fork of Arduino core for ESP32 - https://github.com/husarnet/arduino-esp32 . If you have other version of this Arduino core for ESP32 installed in your OS, it is recommended to remove them to avoid conflicts with Husarnet's version)
 
 **3. Select ESP32 dev board:**
 * open "Tools" -> "Board"
-* select "ESP32 Dev Module" under "ESP32 Arduino (Husarnet)" section
+* select "ESP32 Dev Module" under "ESP32 Arduino" section
 
 **4. Run demo:**
 * Open ESP32_ledstrip_webserver.ino
