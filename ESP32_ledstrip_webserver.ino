@@ -72,6 +72,8 @@ void setup() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
+  Husarnet.selfHostedSetup("default");
+  // Husarnet.join(husarnetJoinCode, hostName); // alternative way, to clicking a link from a terminal. Visit app.husarnet.com -> network -> add element -> join code tab.
   Husarnet.start();
 
   server.begin();
