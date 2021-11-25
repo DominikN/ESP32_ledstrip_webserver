@@ -1,12 +1,37 @@
-#include <WiFi.h>
-#include <NeoPixelBus.h>
 #include <Husarnet.h>
+#include <NeoPixelBus.h>
+#include <WiFi.h>
+#include <WiFiMulti.h>
+
+/* =============== credentials section start =============== */
+#if __has_include("credentials.h")
+#include "credentials.h"
+#else
+/* to get your join code go to https://app.husarnet.com
+   -> select network
+   -> click "Add element"
+   -> select "join code" tab
+
+   Keep it secret!
+*/
+const char* husarnetJoinCode = "xxxxxxxxxxxxxxxxxxxxxx";
+const char* dashboardURL = "default";
+const char* hostName = "my_ledstrip";
+
+// WiFi credentials
+const char* wifiNetworks[][2] = {
+  {"wifi-ssid-one", "wifi-pass-one"},
+  {"wifi-ssid-two", "wifi-pass-two"},
+};
+
+#endif
+/* =============== credentials section end =============== */
 
 // Which pin on the Arduino is connected to the NeoPixels?
-#define PIN            12
+#define PIN 12
 
 // How many NeoPixels are attached to the Arduino?
-#define NUMPIXELS      60
+#define NUMPIXELS 60
 
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUMPIXELS, PIN);
 
@@ -16,23 +41,10 @@ uint8_t blue = 0;
 
 int j = 0;
 
-#define NUM_NETWORKS 4
-
-// Add your networks credentials here
-const char* ssidTab[NUM_NETWORKS] = {
-  "wifi-network-1",
-  "wifi-network-2",
-  "wifi-network-3",
-  "wifi-network-4"
-};
-const char* passwordTab[NUM_NETWORKS] = {
-  "wifi-pass-1",
-  "wifi-pass-2",
-  "wifi-pass-3",
-  "wifi-pass-4"
-};
-
 HusarnetServer server(8000);
+
+// you can provide credentials to multiple WiFi networks
+WiFiMulti wifiMulti;
 
 String header;
 
@@ -42,29 +54,18 @@ void setup() {
   strip.Begin();
   strip.Show();
 
-  bool connectedSuccess = 0;
-  for (int i = 0; i < NUM_NETWORKS; i++) {
-    Serial.print("Connecting to ");
-    Serial.println(ssidTab[i]);
-    WiFi.begin(ssidTab[i], passwordTab[i]);
-    for (int j = 0; j < 10; j++) {
-      if (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-      } else {
-        connectedSuccess = true;
-      }
-    }
-    Serial.println("");
-    if (connectedSuccess == true) {
-      break;
-    }
+  // Save Wi-Fi credentials
+  for (int i = 0; i < (sizeof(wifiNetworks)/sizeof(wifiNetworks[0])); i++) {
+    wifiMulti.addAP(wifiNetworks[i][0], wifiNetworks[i][1]);
+    Serial.printf("WiFi %d: SSID: \"%s\" ; PASS: \"%s\"\r\n", i, wifiNetworks[i][0], wifiNetworks[i][1]);
   }
-  if (connectedSuccess == false) {
-    Serial.println("WiFi network unreachable");
-    while (1) {
-      ;
-    }
+
+  uint8_t stat = WL_DISCONNECTED;
+
+  while (stat != WL_CONNECTED) {
+    stat = wifiMulti.run();
+    Serial.printf("WiFi status: %d\r\n", (int)stat);
+    delay(100);
   }
 
   Serial.println("");
@@ -73,26 +74,26 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   Husarnet.selfHostedSetup("default");
-  // Husarnet.join(husarnetJoinCode, hostName); // alternative way, to clicking a link from a terminal. Visit app.husarnet.com -> network -> add element -> join code tab.
+  Husarnet.join(husarnetJoinCode, hostName); // alternative way, to clicking
+  // a link from a terminal. Visit app.husarnet.com -> network -> add element ->
+  // join code tab.
   Husarnet.start();
 
   server.begin();
 
-  xTaskCreate(
-    taskLED,          /* Task function. */
-    "taskLED",        /* String with name of task. */
-    10000,            /* Stack size in bytes. */
-    NULL,             /* Parameter passed as input of the task */
-    2,                /* Priority of the task. */
-    NULL);            /* Task handle. */
+  xTaskCreate(taskLED,   /* Task function. */
+              "taskLED", /* String with name of task. */
+              10000,     /* Stack size in bytes. */
+              NULL,      /* Parameter passed as input of the task */
+              2,         /* Priority of the task. */
+              NULL);     /* Task handle. */
 
-  xTaskCreate(
-    taskWifi,          /* Task function. */
-    "taskWifi",        /* String with name of task. */
-    10000,            /* Stack size in bytes. */
-    NULL,             /* Parameter passed as input of the task */
-    1,                /* Priority of the task. */
-    NULL);            /* Task handle. */
+  xTaskCreate(taskWifi,   /* Task function. */
+              "taskWifi", /* String with name of task. */
+              10000,      /* Stack size in bytes. */
+              NULL,       /* Parameter passed as input of the task */
+              1,          /* Priority of the task. */
+              NULL);      /* Task handle. */
 }
 
 void rainbow(int j) {
@@ -101,21 +102,21 @@ void rainbow(int j) {
   int m = 0;
 
   for (int i = 0; i < NUMPIXELS; i++) {
-    if ( ( i >= 0 ) && ( i < NUMPIXELS * 1 / 3 ) ) {
+    if ((i >= 0) && (i < NUMPIXELS * 1 / 3)) {
       red = 255 * k / (NUMPIXELS / 3);
       green = 0;
-      blue = 255 - (255 * k / (NUMPIXELS / 3) );
+      blue = 255 - (255 * k / (NUMPIXELS / 3));
       k++;
     }
-    if ( ( i >= NUMPIXELS * 1 / 3 ) && ( i < NUMPIXELS * 2 / 3 ) ) {
-      red = 255 - (255 * l / (NUMPIXELS / 3) );
+    if ((i >= NUMPIXELS * 1 / 3) && (i < NUMPIXELS * 2 / 3)) {
+      red = 255 - (255 * l / (NUMPIXELS / 3));
       green = 255 * l / (NUMPIXELS / 3);
       blue = 0;
       l++;
     }
-    if ( ( i >= NUMPIXELS * 2 / 3 ) && ( i < NUMPIXELS * 3 / 3 ) ) {
+    if ((i >= NUMPIXELS * 2 / 3) && (i < NUMPIXELS * 3 / 3)) {
       red = 0;
-      green = 255 - (255 * m / (NUMPIXELS / 3) );
+      green = 255 - (255 * m / (NUMPIXELS / 3));
       blue = 255 * m / (NUMPIXELS / 3);
       m++;
     }
@@ -133,19 +134,19 @@ void white_shine(int j) {
   int m = 0;
 
   for (int i = 0; i < NUMPIXELS; i++) {
-    if ( ( i >= 0 ) && ( i < NUMPIXELS * 1 / 3 ) ) {
+    if ((i >= 0) && (i < NUMPIXELS * 1 / 3)) {
       red = 255 * k / (NUMPIXELS / 3);
       green = 255 * k / (NUMPIXELS / 3);
       blue = 255 * k / (NUMPIXELS / 3);
       k++;
     }
-    if ( ( i >= NUMPIXELS * 1 / 3 ) && ( i < NUMPIXELS * 2 / 3 ) ) {
-      red = 255 - (255 * l / (NUMPIXELS / 3) );
-      green = 255 - (255 * l / (NUMPIXELS / 3) );
-      blue = 255 - (255 * l / (NUMPIXELS / 3) );
+    if ((i >= NUMPIXELS * 1 / 3) && (i < NUMPIXELS * 2 / 3)) {
+      red = 255 - (255 * l / (NUMPIXELS / 3));
+      green = 255 - (255 * l / (NUMPIXELS / 3));
+      blue = 255 - (255 * l / (NUMPIXELS / 3));
       l++;
     }
-    if ( ( i >= NUMPIXELS * 2 / 3 ) && ( i < NUMPIXELS * 3 / 3 ) ) {
+    if ((i >= NUMPIXELS * 2 / 3) && (i < NUMPIXELS * 3 / 3)) {
       red = 0;
       green = 0;
       blue = 0;
@@ -162,21 +163,21 @@ void red_shine(int j) {
   int k = 0;
   int l = 0;
   int m = 0;
-  
+
   for (int i = 0; i < NUMPIXELS; i++) {
-    if ( ( i >= 0 ) && ( i < NUMPIXELS * 1 / 3 ) ) {
+    if ((i >= 0) && (i < NUMPIXELS * 1 / 3)) {
       red = 255;
       green = 255 - 255 * k / (NUMPIXELS / 3);
       blue = 255 - 255 * k / (NUMPIXELS / 3);
       k++;
     }
-    if ( ( i >= NUMPIXELS * 1 / 3 ) && ( i < NUMPIXELS * 2 / 3 ) ) {
+    if ((i >= NUMPIXELS * 1 / 3) && (i < NUMPIXELS * 2 / 3)) {
       red = 255;
-      green = (255 * l / (NUMPIXELS / 3) );
-      blue = (255 * l / (NUMPIXELS / 3) );
+      green = (255 * l / (NUMPIXELS / 3));
+      blue = (255 * l / (NUMPIXELS / 3));
       l++;
     }
-    if ( ( i >= NUMPIXELS * 2 / 3 ) && ( i < NUMPIXELS * 3 / 3 ) ) {
+    if ((i >= NUMPIXELS * 2 / 3) && (i < NUMPIXELS * 3 / 3)) {
       red = 255;
       green = 255;
       blue = 255;
@@ -188,8 +189,7 @@ void red_shine(int j) {
   delay(40);
 }
 
-void led_white()
-{
+void led_white() {
   for (int i = 0; i < NUMPIXELS; i++) {
     red = 255;
     green = 255;
@@ -211,7 +211,6 @@ void led_off() {
   strip.Show();
 }
 
-
 char* getModeName(uint8_t modeNo) {
   switch (modeNo) {
     case 0:
@@ -229,8 +228,7 @@ char* getModeName(uint8_t modeNo) {
 }
 
 uint8_t modeRGB = 0;
-void taskLED( void * parameter )
-{
+void taskLED(void* parameter) {
   while (1) {
     switch (modeRGB) {
       case 0:
@@ -258,7 +256,7 @@ void taskLED( void * parameter )
   }
 
   Serial.println("Ending task LED");
-  vTaskDelete( NULL );
+  vTaskDelete(NULL);
 }
 
 void loop() {
@@ -295,12 +293,15 @@ cursor: pointer;
 </style>
 </head>   
 )rawText";
-  
-void taskWifi( void * parameter ) {
 
-
-  
+void taskWifi(void* parameter) {
   while (1) {
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.printf("WiFi disconnected, reconnecting\r\n");
+      delay(500);
+      wifiMulti.run();
+    }
+    
     HusarnetClient client = server.available();
 
     if (client) {
@@ -308,7 +309,6 @@ void taskWifi( void * parameter ) {
       String currentLine = "";
       Serial.printf("connected: %d\n", (int)client.connected());
       while (client.connected()) {
-
         if (client.available()) {
           char c = client.read();
           //          Serial.write(c);
