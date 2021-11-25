@@ -5,7 +5,6 @@
 
 Clone the repo and open it using [Visual Studio Code](https://code.visualstudio.com/) with [PlatformIO extension](https://platformio.org/install/ide?install=vscode) installed.
 
-Connect ESP32 with your laptop using USB cable, and execute:
 
 **2. Get Husarnet join code**
 
