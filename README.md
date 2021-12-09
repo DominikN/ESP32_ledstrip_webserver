@@ -1,4 +1,10 @@
 # ESP32_ledstrip_webserver
+
+[![GitHub stars](https://img.shields.io/github/stars/dominikn/ESP32_ledstrip_webserver?style=social)](https://github.com/DominikN/ESP32_ledstrip_webserver/stargazers/)
+
+[![Build firmware](https://github.com/DominikN/ESP32_ledstrip_webserver/actions/workflows/build.yml/badge.svg)](https://github.com/DominikN/ESP32_ledstrip_webserver/actions/workflows/build.yml)
+[![GitHub license](https://img.shields.io/github/license/dominikn/ESP32_ledstrip_webserver.svg)](https://github.com/dominikn/ESP32_ledstrip_webserver/blob/master/LICENSE)
+
 *Control WS2812 based LED strip using a web server hosted by ESP32.*
 
 **1. Flashing ESP32**
